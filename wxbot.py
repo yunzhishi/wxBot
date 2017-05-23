@@ -770,7 +770,7 @@ class WXBot:
         self.status = 'loginsuccess'  #WxbotManage使用
         while True:
             if self.status == 'wait4loginout':  #WxbotManage使用
-                return 
+                return
             check_time = time.time()
             try:
                 [retcode, selector] = self.sync_check()
@@ -1110,6 +1110,30 @@ class WXBot:
             r = self.session.post(url, data=json.dumps(data))
             res = json.loads(r.text)
             if res['BaseResponse']['Ret'] == 0:
+                return True
+            else:
+                return False
+        except Exception,e:
+            return False
+
+    def send_emoticon_by_uid(self, emoticonMd5, uid):
+        if emoticonMd5 is None:
+            return False
+        url = self.base_uri + '/webwxsendemoticon?fun=sys'
+        data = {
+                'BaseRequest': self.base_request,
+                'Msg': {
+                    'Type': 47,
+                    'EmojiFlag': 2,
+                    'EMoticonMd5': emoticonMd5,
+                    'FromUserName': self.my_account['UserName'],
+                    'ToUserName': uid,
+                    'LocalID': str(time.time() * 1e7),
+                    'ClientMsgId': str(time.time() * 1e7), }, }
+        try:
+            r = self.session.post(url, data=json.dumps(data))
+            res = json.loads(r.text)
+            if res['BaseRequest']['Ret'] == 0:
                 return True
             else:
                 return False

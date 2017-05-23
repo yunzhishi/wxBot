@@ -4,13 +4,14 @@
 from wxbot import *
 import ConfigParser
 import json
+import random
 
 
 class TulingWXBot(WXBot):
     def __init__(self):
         WXBot.__init__(self)
 
-        self.tuling_key = ""
+        self.tuling_key = "图灵机器人API Key"
         self.robot_switch = True
 
         try:
@@ -62,38 +63,80 @@ class TulingWXBot(WXBot):
                     self.robot_switch = True
                     self.send_msg_by_uid(u'[Robot]' + u'机器人已开启！', msg['to_user_id'])
 
+    def emoticon_reply(self, uid):
+        filename = './emoticons.json'
+        with open(filename, 'r') as f:
+            resource = json.load(f)
+        # Random select from nx2 list 'resource', and take value of key 'md5'
+        md5 = random.choice(resource)['md5']
+        self.send_emoticon_by_uid(md5, uid)
+        print '    ROBOT: [Emoticon MD5]', md5
+
     def handle_msg_all(self, msg):
+        emoticon_cmd = [u'尬图', u'来啊', u'互相伤害啊']
+
         if not self.robot_switch and msg['msg_type_id'] != 1:
             return
+
         if msg['msg_type_id'] == 1 and msg['content']['type'] == 0:  # reply to self
             self.auto_switch(msg)
-        elif msg['msg_type_id'] == 4 and msg['content']['type'] == 0:  # text message from contact
-            self.send_msg_by_uid(self.tuling_auto_reply(msg['user']['id'], msg['content']['data']), msg['user']['id'])
-        elif msg['msg_type_id'] == 3 and msg['content']['type'] == 0:  # group text message
-            if 'detail' in msg['content']:
-                my_names = self.get_group_member_name(msg['user']['id'], self.my_account['UserName'])
-                if my_names is None:
-                    my_names = {}
-                if 'NickName' in self.my_account and self.my_account['NickName']:
-                    my_names['nickname2'] = self.my_account['NickName']
-                if 'RemarkName' in self.my_account and self.my_account['RemarkName']:
-                    my_names['remark_name2'] = self.my_account['RemarkName']
 
-                is_at_me = False
-                for detail in msg['content']['detail']:
-                    if detail['type'] == 'at':
-                        for k in my_names:
-                            if my_names[k] and my_names[k] == detail['value']:
-                                is_at_me = True
-                                break
-                if is_at_me:
-                    src_name = msg['content']['user']['name']
-                    reply = 'to ' + src_name + ': '
-                    if msg['content']['type'] == 0:  # text message
-                        reply += self.tuling_auto_reply(msg['content']['user']['id'], msg['content']['desc'])
-                    else:
-                        reply += u"对不起，只认字，其他杂七杂八的我都不认识，,,Ծ‸Ծ,,"
-                    self.send_msg_by_uid(reply, msg['user']['id'])
+        elif msg['msg_type_id'] == 4:  # message from contact
+            if msg['content']['type'] == 0: # text message
+                textcmdFlag = False
+                for cmd in emoticon_cmd:
+                    if cmd == msg['content']['data']:
+                        self.emoticon_reply(msg['user']['id'])
+                        textcmdFlag = True
+                if textcmdFlag == False:
+                    self.send_msg_by_uid(self.tuling_auto_reply(msg['user']['id'], msg['content']['data']), msg['user']['id'])
+            else:
+                # reply = u"对不起，只认字，其他杂七杂八的我都不认识，,,Ծ‸Ծ,,"
+                # self.send_msg_by_uid(reply, msg['user']['id'])
+                # print '    ROBOT:', reply
+                self.emoticon_reply(msg['user']['id'])
+
+        elif msg['msg_type_id'] == 3:  # group message
+            if msg['content']['type'] == 0:  # text message
+                textcmdFlag = False
+                for cmd in emoticon_cmd:
+                    if cmd == msg['content']['data']:
+                        self.emoticon_reply(msg['user']['id'])
+                        textcmdFlag = True
+                if textcmdFlag == False:
+                    if 'detail' in msg['content']:
+                        my_names = self.get_group_member_name(msg['user']['id'], self.my_account['UserName'])
+                        if my_names is None:
+                            my_names = {}
+                        if 'NickName' in self.my_account and self.my_account['NickName']:
+                            my_names['nickname2'] = self.my_account['NickName']
+                        if 'RemarkName' in self.my_account and self.my_account['RemarkName']:
+                            my_names['remark_name2'] = self.my_account['RemarkName']
+
+                        is_at_me = False
+                        for detail in msg['content']['detail']:
+                            if detail['type'] == 'at':
+                                for k in my_names:
+                                    if my_names[k] and my_names[k] == detail['value']:
+                                        is_at_me = True
+                                        break
+
+                        if is_at_me:
+                            textcmdFlag = False
+                            for cmd in emoticon_cmd:
+                                if cmd == msg['content']['desc']:
+                                    self.emoticon_reply(msg['user']['id'])
+                                    textcmdFlag = True
+                            if textcmdFlag == False:
+                                src_name = msg['content']['user']['name']
+                                reply = '@' + src_name + ': '
+                                reply += self.tuling_auto_reply(msg['content']['user']['id'], msg['content']['desc'])
+                                self.send_msg_by_uid(reply, msg['user']['id'])
+            else:
+                # reply = u"对不起，只认字，其他杂七杂八的我都不认识，,,Ծ‸Ծ,,"
+                # self.send_msg_by_uid(reply, msg['user']['id'])
+                # print '    ROBOT:', reply
+                self.emoticon_reply(msg['user']['id'])
 
 
 def main():
