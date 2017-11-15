@@ -11,7 +11,7 @@ class TulingWXBot(WXBot):
     def __init__(self):
         WXBot.__init__(self)
 
-        self.tuling_key = "图灵机器人API Key"
+        self.tuling_key = "2715c50b39c54fa993fba5b1f2f938d3"
         self.robot_switch = True
 
         try:
@@ -48,20 +48,19 @@ class TulingWXBot(WXBot):
         else:
             return u"知道啦"
 
-    def auto_switch(self, msg):
-        msg_data = msg['content']['data']
+    def auto_switch(self, msg_data, uid):
         stop_cmd = [u'退下', u'走开', u'关闭', u'关掉', u'休息', u'滚开']
         start_cmd = [u'出来', u'启动', u'工作']
         if self.robot_switch:
             for i in stop_cmd:
                 if i == msg_data:
                     self.robot_switch = False
-                    self.send_msg_by_uid(u'[Robot]' + u'机器人已关闭！', msg['to_user_id'])
+                    self.send_msg_by_uid(u'[小蛋] ' + u'机器人已关闭！', uid)
         else:
             for i in start_cmd:
                 if i == msg_data:
                     self.robot_switch = True
-                    self.send_msg_by_uid(u'[Robot]' + u'机器人已开启！', msg['to_user_id'])
+                    self.send_msg_by_uid(u'[小蛋] ' + u'机器人已开启！', uid)
 
     def emoticon_reply(self, uid):
         filename = './emoticons.json'
@@ -75,14 +74,20 @@ class TulingWXBot(WXBot):
     def handle_msg_all(self, msg):
         emoticon_cmd = [u'尬图', u'来啊', u'互相伤害啊']
 
-        if not self.robot_switch and msg['msg_type_id'] != 1:
-            return
+        # if not self.robot_switch and msg['msg_type_id'] != 1:
+        #     return
 
         if msg['msg_type_id'] == 1 and msg['content']['type'] == 0:  # reply to self
-            self.auto_switch(msg)
+            self.auto_switch(msg['content']['data'], msg['user']['id'])
 
         elif msg['msg_type_id'] == 4:  # message from contact
             if msg['content']['type'] == 0: # text message
+                if not self.robot_switch:
+                    self.auto_switch(msg['content']['data'], msg['user']['id'])
+                    return
+                else:
+                    self.auto_switch(msg['content']['data'], msg['user']['id'])
+
                 textcmdFlag = False
                 for cmd in emoticon_cmd:
                     if cmd == msg['content']['data']:
@@ -94,10 +99,18 @@ class TulingWXBot(WXBot):
                 # reply = u"对不起，只认字，其他杂七杂八的我都不认识，,,Ծ‸Ծ,,"
                 # self.send_msg_by_uid(reply, msg['user']['id'])
                 # print '    ROBOT:', reply
+                if not self.robot_switch:
+                    return
                 self.emoticon_reply(msg['user']['id'])
 
         elif msg['msg_type_id'] == 3:  # group message
             if msg['content']['type'] == 0:  # text message
+                if not self.robot_switch:
+                    self.auto_switch(msg['content']['data'], msg['user']['id'])
+                    return
+                else:
+                    self.auto_switch(msg['content']['data'], msg['user']['id'])
+
                 textcmdFlag = False
                 for cmd in emoticon_cmd:
                     if cmd == msg['content']['data']:
@@ -121,21 +134,30 @@ class TulingWXBot(WXBot):
                                         is_at_me = True
                                         break
 
-                        if is_at_me:
+                        if True:
+                            if not self.robot_switch:
+                                self.auto_switch(msg['content']['desc'], msg['user']['id'])
+                                return
+                            else:
+                                self.auto_switch(msg['content']['desc'], msg['user']['id'])
+
                             textcmdFlag = False
                             for cmd in emoticon_cmd:
                                 if cmd == msg['content']['desc']:
                                     self.emoticon_reply(msg['user']['id'])
                                     textcmdFlag = True
                             if textcmdFlag == False:
-                                src_name = msg['content']['user']['name']
-                                reply = '@' + src_name + ': '
-                                reply += self.tuling_auto_reply(msg['content']['user']['id'], msg['content']['desc'])
+                                # src_name = msg['content']['user']['name']
+                                # reply = '@' + src_name + ': '
+                                # reply += self.tuling_auto_reply(msg['content']['user']['id'], msg['content']['desc'])
+                                reply = self.tuling_auto_reply(msg['content']['user']['id'], msg['content']['desc'])
                                 self.send_msg_by_uid(reply, msg['user']['id'])
             else:
                 # reply = u"对不起，只认字，其他杂七杂八的我都不认识，,,Ծ‸Ծ,,"
                 # self.send_msg_by_uid(reply, msg['user']['id'])
                 # print '    ROBOT:', reply
+                if not self.robot_switch:
+                    return
                 self.emoticon_reply(msg['user']['id'])
 
 
